@@ -1,0 +1,30 @@
+# colcon / ament (if the repo is built in place)
+build/
+install/
+log/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json
+CMakeLists.txt.user
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Saved clouds and rosbags
+/*.pcd
+/*.ply
+rosbag2_*/
+
+# Doxygen output
+doxygen/

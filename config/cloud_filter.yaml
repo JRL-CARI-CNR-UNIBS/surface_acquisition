@@ -1,0 +1,31 @@
+cloud_filter_node:
+  ros__parameters:
+    # 1. Crop (PassThrough) in the camera optical frame: z = depth, x = right, y = down
+    min_depth: 0.15              # [m] drops the gripper / tool in front of the camera
+    max_depth: 0.4               # [m] drops the background (floor, walls)
+    x_min: 0.0                   # [m] lateral limits, disabled when min >= max
+    x_max: 0.0
+    y_min: 0.0
+    y_max: 0.0
+
+    # 2. Voxel grid
+    voxel_leaf: 0.003            # [m] <= 0 disables
+
+    # 3. Statistical outlier removal
+    sor_mean_k: 30               # neighbours analysed per point, <= 0 disables
+    sor_stddev_mul: 1.0          # threshold: mean + sor_stddev_mul * stddev
+
+    # 4. Euclidean clustering: only the largest cluster is published
+    cluster_enabled: true
+    cluster_tolerance: 0.01      # [m] must be larger than voxel_leaf (~3x)
+    cluster_min_size: 100
+    cluster_max_size: 10000000
+
+    # 5. Normals (oriented towards the camera)
+    normal_k_search: 20          # used when normal_radius <= 0
+    normal_radius: 0.0           # [m] radius search if > 0
+    threads: 0                   # OpenMP threads, 0 = automatic
+
+    # Node
+    max_rate: 10.0               # [Hz] processing rate limit, <= 0 processes every frame
+    publish_debug: false         # also publish ~/before_clustering
