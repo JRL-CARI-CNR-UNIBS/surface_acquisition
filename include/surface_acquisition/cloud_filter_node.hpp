@@ -64,6 +64,12 @@ private:
   std::chrono::steady_clock::time_point last_processed_;
   std::chrono::steady_clock::time_point last_log_{std::chrono::steady_clock::now()};
   std::size_t frames_since_log_{0};
+
+  // Heartbeat timer to log that the node is alive, even if no clouds are received
+  rclcpp::TimerBase::SharedPtr heartbeat_timer_;
+
+  
+  bool processing_{false};  // true while a cloud is being processed, to avoid overlapping callbacks
 };
 
 }  // namespace surface_acquisition

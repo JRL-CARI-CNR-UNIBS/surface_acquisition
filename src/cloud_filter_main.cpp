@@ -11,7 +11,11 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<surface_acquisition::CloudFilterNode>());
+
+  // Creare a multi-threaded executor to allow the parameter callback to run concurrently with the subscription callback
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(std::make_shared<surface_acquisition::CloudFilterNode>());
+  executor.spin();
   rclcpp::shutdown();
   return 0;
 }

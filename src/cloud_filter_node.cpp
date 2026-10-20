@@ -80,19 +80,28 @@ CloudFilterNode::CloudFilterNode(const rclcpp::NodeOptions & options)
   param_cb_ = add_on_set_parameters_callback(
     std::bind(&CloudFilterNode::onSetParameters, this, std::placeholders::_1));
 
+
+  // Reliable, so that Rviz (reliable by default) and node 2 (best effort) can both subscribe
+  filtered_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("filtered_cloud", rclcpp::QoS(5));
+  debug_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("~/before_clustering", rclcpp::QoS(5));
+
+
   // Only the most recent camera frame is of interest: with depth 1 the frames that
   // arrive while a cloud is being processed are overwritten instead of queued.
   cloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
     "input_cloud", rclcpp::SensorDataQoS().keep_last(1),
     std::bind(&CloudFilterNode::cloudCallback, this, std::placeholders::_1));
 
-  // Reliable, so that Rviz (reliable by default) and node 2 (best effort) can both subscribe
-  filtered_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("filtered_cloud", rclcpp::QoS(5));
-  debug_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("~/before_clustering", rclcpp::QoS(5));
-
   RCLCPP_INFO(
     get_logger(), "cloud_filter_node ready: '%s' -> '%s'",
     cloud_sub_->get_topic_name(), filtered_pub_->get_topic_name());
+
+
+  // add a heartbeat timer to log that the node is alive, even if no clouds are received, 20 seconds
+  heartbeat_timer_ = create_wall_timer(
+    std::chrono::seconds(20), [this]() {
+      RCLCPP_INFO(get_logger(), "cloud_filter_node alive: '%s' -> '%s'", cloud_sub_->get_topic_name(), filtered_pub_->get_topic_name());
+    });
 }
 
 void CloudFilterNode::declareParameters()
@@ -165,16 +174,25 @@ rcl_interfaces::msg::SetParametersResult CloudFilterNode::onSetParameters(
 
 void CloudFilterNode::cloudCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
+  RCLCPP_ERROR(get_logger(), "Received cloud with %u points", msg->width * msg->height);
   const auto t_start = std::chrono::steady_clock::now();
   if (max_rate_ > 0.0 &&
     std::chrono::duration<double>(t_start - last_processed_).count() < 1.0 / max_rate_)
   {
+    RCLCPP_WARN(get_logger(), "Skipping cloud to respect max_rate = %.1f Hz", max_rate_);
     return;
   }
+  if (processing_) {
+    RCLCPP_WARN(get_logger(), "Skipping cloud because previous one is still being processed");
+    return;
+  }
+  processing_ = true;
   last_processed_ = t_start;
 
   auto input = std::make_shared<Cloud>();
   pcl::fromROSMsg(*msg, *input);
+
+  RCLCPP_ERROR(get_logger(), "Converted cloud with %zu points", input->size());
 
   const FilterResult r = filterCloud(input, options_);
 
@@ -192,6 +210,8 @@ void CloudFilterNode::cloudCallback(const sensor_msgs::msg::PointCloud2::ConstSh
     dbg.header = msg->header;
     debug_pub_->publish(dbg);
   }
+
+  RCLCPP_ERROR(get_logger(), "Published cloud with %zu points", r.cloud->size());
 
   const double ms =
     std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t_start).count();
@@ -218,6 +238,8 @@ void CloudFilterNode::cloudCallback(const sensor_msgs::msg::PointCloud2::ConstSh
     frames_since_log_ = 0;
     last_log_ = t_start;
   }
+
+  RCLCPP_FATAL(get_logger(), "Cloud filtering done in %.0f ms, %zu points output", ms, s.output);
 }
 
 }  // namespace surface_acquisition

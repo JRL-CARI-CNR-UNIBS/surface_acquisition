@@ -2,7 +2,7 @@ cloud_filter_node:
   ros__parameters:
     # 1. Crop (PassThrough) in the camera optical frame: z = depth, x = right, y = down
     min_depth: 0.15              # [m] drops the gripper / tool in front of the camera
-    max_depth: 0.4               # [m] drops the background (floor, walls)
+    max_depth: 0.8               # [m] drops the background (floor, walls)
     x_min: 0.0                   # [m] lateral limits, disabled when min >= max
     x_max: 0.0
     y_min: 0.0
@@ -27,5 +27,5 @@ cloud_filter_node:
     threads: 0                   # OpenMP threads, 0 = automatic
 
     # Node
-    max_rate: 10.0               # [Hz] processing rate limit, <= 0 processes every frame
+    max_rate: 1.0               # [Hz] processing rate limit, <= 0 processes every frame
     publish_debug: false         # also publish ~/before_clustering
