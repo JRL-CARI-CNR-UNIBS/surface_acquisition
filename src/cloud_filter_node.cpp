@@ -88,8 +88,10 @@ CloudFilterNode::CloudFilterNode(const rclcpp::NodeOptions & options)
 
   // Only the most recent camera frame is of interest: with depth 1 the frames that
   // arrive while a cloud is being processed are overwritten instead of queued.
+  // Reliable, like the RealSense publisher: with best effort a cloud of several MB
+  // is dropped as soon as one of its fragments is lost, and the input can stop.
   cloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
-    "input_cloud", rclcpp::SensorDataQoS().keep_last(1),
+    "input_cloud", rclcpp::QoS(1).reliable(),
     std::bind(&CloudFilterNode::cloudCallback, this, std::placeholders::_1));
 
   RCLCPP_INFO(
@@ -182,11 +184,6 @@ void CloudFilterNode::cloudCallback(const sensor_msgs::msg::PointCloud2::ConstSh
     RCLCPP_WARN(get_logger(), "Skipping cloud to respect max_rate = %.1f Hz", max_rate_);
     return;
   }
-  if (processing_) {
-    RCLCPP_WARN(get_logger(), "Skipping cloud because previous one is still being processed");
-    return;
-  }
-  processing_ = true;
   last_processed_ = t_start;
 
   auto input = std::make_shared<Cloud>();

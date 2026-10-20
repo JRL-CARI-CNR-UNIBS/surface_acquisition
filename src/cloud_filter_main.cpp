@@ -12,10 +12,10 @@ int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
-  // Creare a multi-threaded executor to allow the parameter callback to run concurrently with the subscription callback
-  rclcpp::executors::MultiThreadedExecutor executor;
-  executor.add_node(std::make_shared<surface_acquisition::CloudFilterNode>());
-  executor.spin();
+  // Keep a reference: executors only hold a weak pointer to the node, so a
+  // temporary passed to add_node() is destroyed immediately.
+  auto node = std::make_shared<surface_acquisition::CloudFilterNode>();
+  rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;
 }

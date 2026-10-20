@@ -67,9 +67,6 @@ private:
 
   // Heartbeat timer to log that the node is alive, even if no clouds are received
   rclcpp::TimerBase::SharedPtr heartbeat_timer_;
-
-  
-  bool processing_{false};  // true while a cloud is being processed, to avoid overlapping callbacks
 };
 
 }  // namespace surface_acquisition
