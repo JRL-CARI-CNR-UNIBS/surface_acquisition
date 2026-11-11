@@ -13,9 +13,9 @@
 namespace surface_acquisition
 {
 
-using Point = pcl::PointXYZ;
+using Point = pcl::PointXYZRGB;
 using Cloud = pcl::PointCloud<Point>;
-using PointN = pcl::PointNormal;
+using PointN = pcl::PointXYZRGBNormal;
 using CloudN = pcl::PointCloud<PointN>;
 
 /// Tuning of the filtering pipeline (node parameters). All lengths in metres,
